@@ -1,0 +1,38 @@
+name: Dockerize Backend
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'backend/**' # Only runs if you change something in the backend
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend # Steps into your backend folder
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build JAR with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Rename JAR for Docker
+        # Moves the JAR to the root of /backend as 'first.jar'
+        run: cp target/*.jar first.jar
+
+      - name: Build Docker Image
+        run: |
+          docker build -t online-exam-backend:test .
+          echo "Docker image built successfully!"
