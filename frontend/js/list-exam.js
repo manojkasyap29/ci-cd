@@ -1,4 +1,4 @@
-fetch('http://localhost:8080/api/exams')
+fetch('http://localhost:8090/api/exams')
     .then(res=>res.json())
     .then(data => {
 

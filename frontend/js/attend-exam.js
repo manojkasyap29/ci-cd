@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-      const baseUrl = 'http://localhost:8080/api';
+      const baseUrl = 'http://localhost:8090/api';
       
       fetch(`${baseUrl}/exams`)
         .then(res => {

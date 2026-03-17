@@ -1,4 +1,4 @@
-const baseUrl = 'http://localhost:8080/api'
+const baseUrl = 'http://localhost:8090/api'
 const examId = new URLSearchParams(window.location.search).get("examId");
 
 fetch(`${baseUrl}/questions/${examId}`)

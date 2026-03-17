@@ -1,0 +1,13 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "719674478824.dkr.ecr.ap-south-2.amazonaws.com/online-exam-backend:latest",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": 8080
+    }
+  ],
+  "Logging": "/var/log/app"
+}
