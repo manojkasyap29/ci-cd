@@ -1,12 +1,20 @@
-name: Deploy Online Exam Platform
+name: Deploy Online Exam Backend
 
 on:
   push:
     branches: [ "main" ]
+    # Only trigger if changes happen in the backend folder
+    paths:
+      - 'backend/**'
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    
+    # This tells EVERY step to run inside the backend folder
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - name: Checkout Code
@@ -19,12 +27,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Build the project
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # CRITICAL STEP: Match your existing Dockerfile
-      # This finds the JAR in /target and renames it to 'first.jar' in the root
+      # Rename the JAR so the Dockerfile inside /backend can find it
       - name: Prepare JAR for Docker
         run: cp target/*.jar first.jar
 
@@ -33,24 +39,25 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-2
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Build and Push as 'latest' to match your Dockerrun.aws.json
-      - name: Build and Push to ECR
+      - name: Build and Push Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: online-exam-backend
         run: |
+          # The "." here now refers to the /backend folder
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # Zip the Dockerrun.aws.json for Beanstalk
-      - name: Generate Deployment Package
-        run: zip deploy.zip Dockerrun.aws.json
+      - name: Update Manifest & Zip
+        run: |
+          sed -i "s|<IMAGE_NAME>|719674478824.dkr.ecr.ap-south-2.amazonaws.com/online-exam-backend:latest|g" Dockerrun.aws.json
+          zip deploy.zip Dockerrun.aws.json
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v22
@@ -60,5 +67,6 @@ jobs:
           application_name: online-exam-platform
           environment_name: online-exam-env
           version_label: "v-${{ github.sha }}"
-          region: ap-south-2
-          deployment_package: deploy.zip
+          region: ${{ secrets.AWS_REGION }}
+          # Path to the zip inside the backend folder
+          deployment_package: backend/deploy.zip
